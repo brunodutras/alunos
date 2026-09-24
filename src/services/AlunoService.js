@@ -1,6 +1,7 @@
 const prisma = require("../databases/prisma");
 const AlunoInvalidoError = require("../errors/AlunoInvalidoError");
 const AlunoNaoEncontradoError = require("../errors/AlunoNaoEncontradoError");
+const EmailDuplicadoError = require("../errors/EmailDuplicadoError");
 
 const CAMPOS_ORDENAVEIS = ["id", "nome", "email"];
 const DIRECOES_VALIDAS = ["asc", "desc"];
@@ -39,6 +40,39 @@ class AlunoService{
         }
 
         return aluno;
+    }
+
+    async update(id, dados){
+        const {nome, email} = dados ?? {};
+
+        const data = {};
+        if(nome !== undefined) data.nome = nome;
+        if(email !== undefined) data.email = email;
+
+        // Reaproveita AlunoInvalidoError: corpo vazio é o mesmo tipo de erro do create (dados inválidos, 400).
+        if(Object.keys(data).length === 0){
+            throw new AlunoInvalidoError("Informe ao menos nome ou email para atualizar");
+        }
+
+        if(data.nome === "" || data.email === ""){
+            throw new AlunoInvalidoError("Nome e email não podem ser vazios");
+        }
+
+        // Reaproveita AlunoNaoEncontradoError através do findUnique.
+        const aluno = await this.findUnique(id);
+
+        try{
+            return await prisma.aluno.update({
+                where: { id: aluno.id },
+                data
+            });
+        }catch(error){
+            // Exceção própria (409): os dados são válidos, mas o email já pertence a outro aluno (@unique, código P2002).
+            if(error.code === "P2002"){
+                throw new EmailDuplicadoError();
+            }
+            throw error;
+        }
     }
 
     async create(aluno){

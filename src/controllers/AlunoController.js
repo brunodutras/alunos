@@ -32,6 +32,16 @@ class AlunoController{
         }
     }
 
+    async update(request, response){
+        try{
+            const {id} = request.params;
+            const aluno = await alunoService.update(id, request.body);
+            return response.status(200).json({aluno});
+        }catch(error){
+            return responderErro(response, error);
+        }
+    }
+
     async create(request, response){
         try{
             const aluno = await alunoService.create(request.body);
