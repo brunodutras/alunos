@@ -11,5 +11,6 @@ router.get("/", (request, response, next)=>{
 router.post("/", validarAluno, alunoController.create);
 router.get("/:id", alunoController.findUnique);
 router.patch("/:id", alunoController.update);
+router.delete("/:id", alunoController.delete);
 
 module.exports = router;
