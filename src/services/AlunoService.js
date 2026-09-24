@@ -1,14 +1,25 @@
 const prisma = require("../databases/prisma");
 const AlunoInvalidoError = require("../errors/AlunoInvalidoError");
 
+const CAMPOS_ORDENAVEIS = ["id", "nome", "email"];
+const DIRECOES_VALIDAS = ["asc", "desc"];
+
 class AlunoService{
 
-    async findMany(page, pageSize){
-        const alunos = await prisma.aluno.findMany({
-            skip: (page-1)*pageSize,
-            take: Number(pageSize)
-        });
-        return alunos;
+    async findMany(page, pageSize, orderBy, order){
+        const campo = CAMPOS_ORDENAVEIS.includes(orderBy) ? orderBy : "id";
+        const direcao = DIRECOES_VALIDAS.includes(order?.toLowerCase()) ? order.toLowerCase() : "asc";
+
+        const [alunos, total] = await prisma.$transaction([
+            prisma.aluno.findMany({
+                skip: (page-1)*pageSize,
+                take: Number(pageSize),
+                orderBy: { [campo]: direcao }
+            }),
+            prisma.aluno.count()
+        ]);
+
+        return { alunos, total };
     }
 
     async create(aluno){
