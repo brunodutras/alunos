@@ -1,5 +1,6 @@
 const prisma = require("../databases/prisma");
 const AlunoInvalidoError = require("../errors/AlunoInvalidoError");
+const AlunoNaoEncontradoError = require("../errors/AlunoNaoEncontradoError");
 
 const CAMPOS_ORDENAVEIS = ["id", "nome", "email"];
 const DIRECOES_VALIDAS = ["asc", "desc"];
@@ -20,6 +21,24 @@ class AlunoService{
         ]);
 
         return { alunos, total };
+    }
+
+    async findUnique(id){
+        const idNumero = Number(id);
+
+        if(!Number.isInteger(idNumero)){
+            throw new AlunoNaoEncontradoError();
+        }
+
+        const aluno = await prisma.aluno.findUnique({
+            where: { id: idNumero }
+        });
+
+        if(!aluno){
+            throw new AlunoNaoEncontradoError();
+        }
+
+        return aluno;
     }
 
     async create(aluno){
